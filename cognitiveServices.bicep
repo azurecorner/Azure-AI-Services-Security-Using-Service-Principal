@@ -7,9 +7,11 @@ param location string
 @allowed([
   'S0'
 ])
-param cognitiveServiceSkuName string = 'S0'
+param cognitiveServiceSkuName string 
 
 param accounts_cog_srv_002_name string = 'cog-srv-002'
+
+param keyVaultName string 
 
 #disable-next-line BCP081
 resource openAIAccount 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
@@ -57,7 +59,7 @@ resource accounts_cog_srv_002_name_resource 'Microsoft.CognitiveServices/account
 
 
 resource secret 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  name: 'data-kv-ai-srv-001/AI-Services-Key'
+  name: '${keyVaultName}/AI-Services-Key'
   
     properties: {
       value: accounts_cog_srv_002_name_resource.listKeys().key1

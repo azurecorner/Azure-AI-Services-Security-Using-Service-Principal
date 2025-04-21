@@ -1,15 +1,15 @@
-$aiServiceName="datasync-ai-security"
-$resourceGroupName="RG-AI"
-az cognitiveservices account keys list --name $aiServiceName --resource-group $resourceGroupName
 
-
-curl -X POST "https://datasync-ai-security.cognitiveservices.azure.com/language/:analyze-text?api-version=2023-04-01" -H "Content-Type: application/json" -H "Ocp-Apim-Subscription-Key:D4TjYHXuqEcxTP76H3rGPnKBwLuMn9SoBGqkXxss8r8HOxGNMmH5JQQJ99BDACYeBjFXJ3w3AAAEACOGV9PG" --data-ascii "{'analysisInput':{'documents':[{'id':1,'text':'hello'}]}, 'kind': 'LanguageDetection'}"
+curl -X POST "https://cog-srv-002.cognitiveservices.azure.com/language/:analyze-text?api-version=2023-04-01" -H "Content-Type: application/json" -H "Ocp-Apim-Subscription-Key:FyZgHEtSiG5Ws2p4CwA1qSFolF43LAhTe5lgUAaPQuQUUqLQyvPkJQQJ99BDAC5T7U2XJ3w3AAAEACOGqySR" --data-ascii "{'analysisInput':{'documents':[{'id':1,'text':'hello'}]}, 'kind': 'LanguageDetection'}"
 
 
 $ServicePrincipalName="ai-srv-app"
 $sp = New-AzADServicePrincipal -DisplayName $ServicePrincipalName
+
+$sp = Get-AzADServicePrincipal -DisplayName $ServicePrincipalName
 $secret = $sp.PasswordCredentials.SecretText
 $clientId =$sp.AppId
+
+$objectId = (Get-AzADServicePrincipal -ApplicationId $clientId ).id
 
 $subscriptionId= (Get-AzContext).Subscription.id
 az account set --subscription $subscriptionId
