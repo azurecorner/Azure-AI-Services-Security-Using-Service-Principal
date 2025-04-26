@@ -297,3 +297,7 @@ resource secret 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
   }
 
 ```
+
+## Github Repository
+
+<https://github.com/azurecorner/Azure-AI-Services-Security-Using-Service-Principal>
