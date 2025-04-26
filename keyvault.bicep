@@ -4,10 +4,8 @@ param keyVaultName string
 @description('Specifies the Azure location where the key vault should be created.')
 param location string 
 
-
 @description('Specifies the Azure Active Directory tenant ID that should be used for authenticating requests to the key vault. Get it by using Get-AzSubscription cmdlet.')
 param tenantId string = subscription().tenantId
-
 
 param ServicePrincipalAndUserPolicy array
 
@@ -17,7 +15,6 @@ param ServicePrincipalAndUserPolicy array
   'premium'
 ])
 param skuName string = 'standard'
-
 
 resource kv 'Microsoft.KeyVault/vaults@2024-11-01' = {
   name: keyVaultName
@@ -46,7 +43,6 @@ resource kv 'Microsoft.KeyVault/vaults@2024-11-01' = {
     }
   }
 }
-
 
 output location string = location
 output name string = kv.name

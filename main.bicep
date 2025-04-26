@@ -8,7 +8,6 @@ param ServicePrincipalAndUserPolicy array
 @description('That name is the name of our application. It has to be unique.Type a name followed by your resource group name. (<name>-<resourceGroupName>)')
 param cognitiveServiceName string 
 
-
 @allowed([
   'S0'
 ])
