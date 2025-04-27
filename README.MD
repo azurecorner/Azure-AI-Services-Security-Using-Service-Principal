@@ -34,17 +34,21 @@ In this project, we secure access to an Azure AI Service using a **Service Princ
 
 ## Steps Overview
 
-1. **Create an Azure AI Service (Multi-Service Account)**  
+### 1. Create an Azure AI Service (Multi-Service Account)
+
    - Set up a multi-service Azure AI resource via the [Azure Portal](https://portal.azure.com/#view/Microsoft_Azure_ProjectOxford/CognitiveServicesHub/~/AllInOne) or the [Azure AI Services page](https://azure.microsoft.com/en-us/products/ai-services/).
 
-2. **Create an Azure Key Vault**  
+### 2. Create an Azure Key Vault
+
    - Securely store the Azure AI Service key in Key Vault as a secret.
 
-3. **Create a Service Principal**  
+### 3. Create a Service Principal
+
    - Register an application in Azure Active Directory.
    - Grant the Service Principal `Get` and `List` permissions on the Key Vault secrets using Access Policies.
 
-4. **Create a `.env` file**  
+### 4. Create a `.env` file
+
    - Store the following environment variables:
      - `AI_SERVICE_ENDPOINT` – The endpoint URL of the Azure AI Service.
      - `KEY_VAULT` – The name of the Azure Key Vault.
@@ -52,7 +56,8 @@ In this project, we secure access to an Azure AI Service using a **Service Princ
      - `APP_ID` – The client ID (application ID) of the Service Principal.
      - `APP_PASSWORD` – The client secret (password) of the Service Principal.
 
-5. **Develop a Python Application**  
+### 5. Develop a Python Application
+
    - Authenticate to Azure using the Service Principal.
    - Retrieve the AI Service key from the Key Vault.
    - Interact securely with the Azure AI Service.
@@ -63,18 +68,18 @@ In this project, we secure access to an Azure AI Service using a **Service Princ
 
 ### Set the subscription context
 
-You use `Get-AzContext` to retrieve the current Azure subscription and set it for further commands using `az account set`.
+You can use `Get-AzContext` to retrieve the current Azure subscription and set it for further commands using `az account set`.
 
 ### Create a resource group
 
-You define a resource group named `"RG-AZURE-AI-SECURITY-001"` in the `"francecentral"` region with `New-AzResourceGroup`.
+Define a resource group named `"[YOUR-RESOURCE-GROUP-NAME]"` in the `"[YOUR-RESOURCE-GROUP-LOCATION]"` with `New-AzResourceGroup`.
 
 ### Create an application registration
 
-The following command creates a **new Azure Active Directory Service Principal** with the display name `"ai-srv-app"`:
+The following command creates a **new Azure Active Directory Service Principal** with the display name `"[YOUR-SERVICE-PRINCIPAL-NAME]"`:
 
 ```powershell
-$ServicePrincipalName="ai-srv-app"
+$ServicePrincipalName="[YOUR-SERVICE-PRINCIPAL-NAME]"
 $sp = New-AzADServicePrincipal -DisplayName $ServicePrincipalName
 $sp = Get-AzADServicePrincipal -DisplayName $ServicePrincipalName
 $secret = $sp.PasswordCredentials.SecretText
@@ -83,13 +88,13 @@ $clientId =$sp.AppId
 
 ### Deploy the Bicep template
 
-You use `New-AzResourceGroupDeployment` to deploy your **Bicep template** (`main.bicep`) with the associated parameters (`main.bicepparam`) to the previously created resource group. The `-DeploymentDebugLogLevel All` ensures you get detailed logs of the deployment.
+Use `New-AzResourceGroupDeployment` to deploy your **Bicep template** (`main.bicep`) with the associated parameters (`main.bicepparam`) to the previously created resource group. The `-DeploymentDebugLogLevel All` ensures you get detailed logs of the deployment.
 
 ```powershell
 $subscriptionId= (Get-AzContext).Subscription.id
 az account set --subscription $subscriptionId
-$resourceGroupName="RG-AZURE-AI-SECURITY-001"
-New-AzResourceGroup -Name $resourceGroupName -Location "francecentral"
+$resourceGroupName="[YOUR-RESOURCE-GROUP-NAME]"
+New-AzResourceGroup -Name $resourceGroupName -Location "[YOUR-RESOURCE-GROUP-LOCATION]"
 
 
 New-AzResourceGroupDeployment `
@@ -141,10 +146,6 @@ This code loads environment variables from a `.env` file and assigns them to Pyt
 6. **`app_password = os.getenv('APP_PASSWORD')`**:
    - This retrieves the environment variable `APP_PASSWORD`, which contains the client secret (password) for the Azure Service Principal.
    - The value is assigned to the variable `app_password`.
-
-### Purpose
-
-- The purpose of this code is to load sensitive information, like API endpoints, credentials, and configuration data, from a `.env` file into environment variables, making it easy to securely manage and access these settings in your Python application.
 
 ### Prerequisite
 
@@ -295,6 +296,64 @@ resource secret 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
       value: accounts_cog_srv_002_name_resource.listKeys().key1
     }
   }
+
+```
+
+## Python code
+
+```python
+from dotenv import load_dotenv
+import os
+from azure.ai.textanalytics import TextAnalyticsClient
+from azure.core.credentials import AzureKeyCredential
+from azure.keyvault.secrets import SecretClient
+from azure.identity import ClientSecretCredential
+
+
+def main():
+    global ai_endpoint
+    global cog_key
+
+    try:
+        # Get Configuration Settings
+        load_dotenv()
+        ai_endpoint = os.getenv('AI_SERVICE_ENDPOINT')
+        key_vault_name = os.getenv('KEY_VAULT')
+        app_tenant = os.getenv('TENANT_ID')
+        app_id = os.getenv('APP_ID')
+        app_password = os.getenv('APP_PASSWORD')
+
+        # Get Azure AI services key from keyvault using the service principal credentials
+        key_vault_uri = f"https://{key_vault_name}.vault.azure.net/"
+        credential = ClientSecretCredential(app_tenant, app_id, app_password)
+        keyvault_client = SecretClient(key_vault_uri, credential)
+        secret_key = keyvault_client.get_secret("AI-Services-Key")
+        cog_key = secret_key.value
+
+        # Get user input (until they enter "quit")
+        userText =''
+        while userText.lower() != 'quit':
+            userText = input('\nEnter some text ("quit" to stop)\n')
+            if userText.lower() != 'quit':
+                language = GetLanguage(userText)
+                print('Language:', language)
+
+    except Exception as ex:
+        print(ex)
+
+def GetLanguage(text):
+
+    # Create client using endpoint and key
+    credential = AzureKeyCredential(cog_key)
+    client = TextAnalyticsClient(endpoint=ai_endpoint, credential=credential)
+
+    # Call the service to get the detected language
+    detectedLanguage = client.detect_language(documents = [text])[0]
+    return detectedLanguage.primary_language.name
+
+
+if __name__ == "__main__":
+    main()
 
 ```
 
